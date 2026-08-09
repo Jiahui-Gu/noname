@@ -26,6 +26,47 @@ import skills from "./skill.js";
 
 const html = dedent;
 
+function setDoudizhuConfigIntro(node, link, value, config) {
+	const cfg = config || (node && node._link && node._link.config) || (node && node.parentNode && node.parentNode._link && node.parentNode._link.config);
+	if (!cfg || !cfg.name) {
+		node.title = "";
+		return;
+	}
+	const key = link || value;
+	// 加强地主
+	if (cfg.name === "加强地主") {
+		if (!key || key === "disabled") {
+			node.title = "";
+			return;
+		}
+		node.title = get.translation(key + "_info") || "";
+		return;
+	}
+	// 〖飞扬〗版本映射
+	if (cfg.name === "〖飞扬〗版本") {
+		const map = { online: "feiyang", mobile: "mbfeiyang", decade: "dcfeiyang" };
+		const mapped = map[key];
+		if (!mapped) {
+			node.title = "";
+			return;
+		}
+		node.title = get.translation(mapped + "_info") || "";
+		return;
+	}
+	// 农民遗产说明
+	if (cfg.name === "农民遗产") {
+		const map = {
+			online: "一名农民死亡后，另一名农民摸一张牌。",
+			mobile: "一名农民死亡后，另一名农民选择摸两张牌或回复1点体力。",
+			decade: "一名农民死亡后，另一名农民不获得额外效果。",
+		};
+		node.title = map[key] || "";
+		return;
+	}
+	node.title = "";
+}
+
+
 export class Library {
 	configprefix = "noname_0.9_";
 	versionOL = 27;
@@ -7753,6 +7794,7 @@ export class Library {
 					name: "加强地主",
 					init: "disabled",
 					restart: true,
+					textMenu: setDoudizhuConfigIntro,
 					item: {
 						disabled: "禁用",
 						yinfu: "获得〖殷富〗",
@@ -7762,26 +7804,31 @@ export class Library {
 						shiqiang: "获得削弱〖恃强〗",
 					},
 				},
+
 				connect_enhance_nongmin: {
 					name: "农民遗产",
 					init: "mobile",
 					restart: true,
+					textMenu: setDoudizhuConfigIntro,
 					item: {
 						online: "OL版本",
 						mobile: "手杀版本",
 						decade: "十周年版本",
 					},
 				},
+
 				connect_feiyang_version: {
 					name: "〖飞扬〗版本",
 					init: "online",
 					restart: true,
+					textMenu: setDoudizhuConfigIntro,
 					item: {
 						online: "OL版本",
 						mobile: "手杀版本",
 						decade: "十周年版本",
 					},
 				},
+
 			},
 			config: {
 				update: function (config, map) {
@@ -8013,6 +8060,7 @@ export class Library {
 					name: "加强地主",
 					init: "disabled",
 					restart: true,
+					textMenu: setDoudizhuConfigIntro,
 					item: {
 						disabled: "禁用",
 						yinfu: "获得〖殷富〗",
@@ -8022,26 +8070,31 @@ export class Library {
 						shiqiang: "获得削弱〖恃强〗",
 					},
 				},
+
 				enhance_nongmin: {
 					name: "农民遗产",
 					init: "mobile",
 					restart: true,
+					textMenu: setDoudizhuConfigIntro,
 					item: {
 						online: "OL版本",
 						mobile: "手杀版本",
 						decade: "十周年版本",
 					},
 				},
+
 				feiyang_version: {
 					name: "〖飞扬〗版本",
 					init: "online",
 					restart: true,
+					textMenu: setDoudizhuConfigIntro,
 					item: {
 						online: "OL版本",
 						mobile: "手杀版本",
 						decade: "十周年版本",
 					},
 				},
+
 				edit_character: {
 					name: "编辑将池",
 					intro: "这里是智斗三国模式的武将将池。<br/>您可以在这里编辑对武将将池进行编辑，然后点击“保存”按钮即可保存。<br/>将池中的Key势力武将，仅同时在没有被禁用的情况下，才会出现在选将框中。<br/>而非Key势力的武将，只要所在的武将包没有被隐藏，即可出现在选将框中。<br/>该将池为单机模式/联机模式通用将池。在这里编辑后，即使进入联机模式，也依然会生效。<br/>但联机模式本身禁用的武将（如神貂蝉）不会出现在联机模式的选将框中。",
