@@ -26,13 +26,13 @@ import skills from "./skill.js";
 
 const html = dedent;
 
-function setDoudizhuConfigIntro(node, link, value, config) {
-	const cfg = config || (node && node._link && node._link.config) || (node && node.parentNode && node.parentNode._link && node.parentNode._link.config);
+function setDoudizhuConfigIntro(node, link, _value, config) {
+	const cfg = config;
 	if (!cfg || !cfg.name) {
 		node.title = "";
 		return;
 	}
-	const key = link || value;
+	const key = link;
 	// 加强地主
 	if (cfg.name === "加强地主") {
 		if (!key || key === "disabled") {
