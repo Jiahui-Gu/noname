@@ -39,7 +39,13 @@ function setDoudizhuConfigIntro(node, link, value, config) {
 			node.title = "";
 			return;
 		}
-		node.title = get.translation(key + "_info") || "";
+		// Only lookup translations for keys explicitly defined in this config
+		const supported = cfg && (cfg.item || cfg.items || cfg.options || cfg.map || {});
+		if (supported && Object.prototype.hasOwnProperty.call(supported, key)) {
+			node.title = get.translation(key + "_info") || "";
+		} else {
+			node.title = "";
+		}
 		return;
 	}
 	// 〖飞扬〗版本映射
