@@ -40,8 +40,10 @@ function setDoudizhuConfigIntro(node, link, value, config) {
 			return;
 		}
 		// Only lookup translations for keys explicitly defined in this config
-		const supported = cfg && (cfg.item || cfg.items || cfg.options || cfg.map || {});
-		if (supported && Object.prototype.hasOwnProperty.call(supported, key)) {
+		// The textMenu caller passes options as config.item. Restrict to config.item
+		// but defensively treat non-object or missing item as empty.
+		const supported = cfg && cfg.item && typeof cfg.item === 'object' ? cfg.item : {};
+		if (Object.prototype.hasOwnProperty.call(supported, key)) {
 			node.title = get.translation(key + "_info") || "";
 		} else {
 			node.title = "";
