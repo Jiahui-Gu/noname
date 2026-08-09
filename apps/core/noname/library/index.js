@@ -27,48 +27,19 @@ import skills from "./skill.js";
 const html = dedent;
 
 function setDoudizhuConfigIntro(node, link, _value, config) {
-	const cfg = config;
-	if (!cfg || !cfg.name) {
-		node.title = "";
-		return;
-	}
 	const key = link;
-	// 加强地主
-	if (cfg.name === "加强地主") {
-		if (!key || key === "disabled") {
-			node.title = "";
-			return;
-		}
-		// Only lookup translations for keys explicitly defined in this config
-		// The textMenu caller passes options as config.item. Restrict to config.item
-		// but defensively treat non-object or missing item as empty.
-		const supported = cfg && cfg.item && typeof cfg.item === 'object' ? cfg.item : {};
-		if (Object.prototype.hasOwnProperty.call(supported, key)) {
-			node.title = get.translation(key + "_info") || "";
-		} else {
-			node.title = "";
-		}
+	if (config.name === "加强地主") {
+		if (!key || key === "disabled") { node.title = ""; return }
+		node.title = (config.item && Object.hasOwn(config.item, key)) ? get.translation(key + "_info") || "" : "";
 		return;
 	}
-	// 〖飞扬〗版本映射
-	if (cfg.name === "〖飞扬〗版本") {
-		const map = { online: "feiyang", mobile: "mbfeiyang", decade: "dcfeiyang" };
-		const mapped = map[key];
-		if (!mapped) {
-			node.title = "";
-			return;
-		}
-		node.title = get.translation(mapped + "_info") || "";
+	if (config.name === "〖飞扬〗版本") {
+		const m = { online: "feiyang", mobile: "mbfeiyang", decade: "dcfeiyang" }[key];
+		node.title = m ? get.translation(m + "_info") || "" : "";
 		return;
 	}
-	// 农民遗产说明
-	if (cfg.name === "农民遗产") {
-		const map = {
-			online: "一名农民死亡后，另一名农民摸一张牌。",
-			mobile: "一名农民死亡后，另一名农民选择摸两张牌或回复1点体力。",
-			decade: "一名农民死亡后，另一名农民不获得额外效果。",
-		};
-		node.title = map[key] || "";
+	if (config.name === "农民遗产") {
+		node.title = ({ online: "一名农民死亡后，另一名农民摸一张牌。", mobile: "一名农民死亡后，另一名农民选择摸两张牌或回复1点体力。", decade: "一名农民死亡后，另一名农民不获得额外效果。" }[key]) || "";
 		return;
 	}
 	node.title = "";
