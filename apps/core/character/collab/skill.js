@@ -2,7 +2,14 @@ import { lib, game, ui, get, ai, _status } from "noname";
 
 /** @type { importCharacterConfig["skill"] } */
 const skills = {
-	//那兔------by 清风
+	//OL牛马
+	oldianbu: {
+		audio: 2,
+	},
+	oljuhun: {
+		audio: 5,
+	},
+	//那兔
 	natulie: {
 		audio: 2,
 		trigger: { player: "useCardAfter" },
@@ -11,7 +18,9 @@ const skills = {
 				return false;
 			}
 			const num = Math.min(5, player.countHistory("useSkill", evt => evt.skill == "natulie") + 1);
-			return player.countCards("h") != num;
+			//手杀奇妙小巧思
+			//return player.countCards("h") != num;
+			return true;
 		},
 		prompt2(event, player) {
 			const num = Math.min(5, player.countHistory("useSkill", evt => evt.skill == "natulie") + 1);
@@ -29,8 +38,8 @@ const skills = {
 			if (player.countCards("h") < num) {
 				await player.drawTo(num);
 			} else if (player.countCards("h") > num) {
-				const { cards } = await player.chooseToDiscard({ forced: true, position: "h", selectCard: player.countCards("h") - num }).forResult();
-				if (cards?.length) {
+				const result = await player.chooseToDiscard({ forced: true, position: "h", selectCard: player.countCards("h") - num }).forResult();
+				if (result?.bool && result.cards?.length) {
 					const result = await player
 						.chooseTarget({
 							prompt: "烈：你可对一名角色造成一点伤害",
@@ -197,7 +206,7 @@ const skills = {
 					}
 				}
 				if (cards.length) {
-					await player.gain({ cards, animate: "gain2", gaintag: [event.name] });
+					await player.gain({ cards, animate: "draw", gaintag: [event.name] });
 				}
 			}
 		},
@@ -364,7 +373,7 @@ const skills = {
 			return game.hasPlayer(current => get.info("natuyi").filterTarget(null, player, current));
 		},
 		filterTarget(card, player, target) {
-			return target.hasCards("he");
+			return target.hasCards("he") && target != player;
 		},
 		selectTarget: [1, 2],
 		multiline: true,
@@ -374,39 +383,25 @@ const skills = {
 			let cardx = [];
 			await game.doAsyncInOrder(targets, async target => {
 				if (target.hasCards("he")) {
-					const { cards } =
-						target == player
-							? await target
-									.chooseCard({
-										forced: true,
-										position: "he",
-										prompt: "义：请选择一张牌",
-										ai(card) {
-											return -get.value(card);
-										},
-									})
-									.forResult()
-							: await target
-									.chooseToGive({
-										target: player,
-										forced: true,
-										position: "he",
-										prompt: `${get.translation(player)}对你发动了【义】：请交给其一张牌`,
-										ai(card) {
-											const { player, target } = get.event();
-											if (get.attitude(player, target) > 0) {
-												return 8 - get.value(card);
-											}
-											return -get.value(card);
-										},
-									})
-									.set("target", player)
-									.forResult();
-					if (cards?.length) {
+					const result = await target
+						.chooseToGive({
+							target: player,
+							forced: true,
+							position: "he",
+							prompt: `${get.translation(player)}对你发动了【义】：请交给其一张牌`,
+							ai(card) {
+								const { player, target } = get.event();
+								if (get.attitude(player, target) > 0) {
+									return 8 - get.value(card);
+								}
+								return -get.value(card);
+							},
+						})
+						.set("target", player)
+						.forResult();
+					if (result?.bool && result.cards?.length) {
+						const cards = result.cards;
 						cardx.addArray(cards);
-						if (target == player && get.position(cards[0]) == "e") {
-							await player.gain({ cards, animate: "gain2" });
-						}
 					}
 				}
 			});
@@ -442,6 +437,7 @@ const skills = {
 							})
 							.forResult()
 					: { control: list[0] };
+			player.logSkill(event.name, null, null, null, [2]);
 			if (result?.control == "使用杀") {
 				const list = get.inpileVCardList(info => {
 					if (info[2] != "sha") {
@@ -634,11 +630,27 @@ const skills = {
 							}
 						}
 					},
+					cardSavable(card, player) {
+						const cards = [card];
+						if (Array.isArray(card.cards)) {
+							cards.addArray(card.cards);
+						}
+						if (cards.length) {
+							if (
+								cards
+									.map(card => get.color(card))
+									.unique()
+									.containsSome(...player.getStorage("natuyi_nouse"))
+							) {
+								return false;
+							}
+						}
+					},
 				},
 			},
 		},
 	},
-	//乐曹丕------by 清风
+	//乐曹丕
 	olweidai: {
 		audio: 2,
 		forced: true,

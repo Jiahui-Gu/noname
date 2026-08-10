@@ -3,7 +3,7 @@ import html from "dedent";
 
 /** @type { importCharacterConfig["skill"] } */
 const skills = {
-	//武则天------ by 清风
+	//武则天
 	peersheng: {
 		audio: 2,
 		forced: true,
@@ -188,7 +188,7 @@ const skills = {
 			},
 		},
 	},
-	//PE刘徽------by 清风
+	//PE刘徽
 	pejieshu: {
 		audio: "dcjieshu",
 		locked: false,
@@ -420,7 +420,7 @@ const skills = {
 			},
 		},
 	},
-	//白起------by 清风
+	//白起
 	pewuan: {
 		audio: 2,
 		forced: true,
@@ -505,7 +505,7 @@ const skills = {
 			});
 		},
 	},
-	//花木兰------by 清风
+	//花木兰
 	perongbian: {
 		audio: 2,
 		forced: true,
@@ -520,7 +520,7 @@ const skills = {
 			_status.characterlist.randomSort();
 			const list = _status.characterlist.filter(character => get.character(character, 0) === "female");
 			if (!list.length) {
-				player.popup("没喽");
+				player.popup("没有符合条件的武将牌");
 				return;
 			}
 			const name = list.randomGet();
@@ -547,7 +547,7 @@ const skills = {
 					.forResult();
 				if (result?.bool && result.links?.length) {
 					const skill = result.links[0];
-					await player.addSkills(skill);
+					await player.addAdditionalSkills(event.name, skill);
 					lib.card["huashen_card_" + name].skills.push(skill);
 				}
 			}
@@ -807,7 +807,7 @@ const skills = {
 			},
 		},
 	},
-	//杨玉环------by 清风
+	//杨玉环
 	peyichuan: {
 		audio: 2,
 		enable: "phaseUse",
@@ -971,7 +971,7 @@ const skills = {
 			}
 		},
 	},
-	//夏侯岚------by 清风
+	//夏侯岚
 	pexunji: {
 		audio: 2,
 		trigger: {
@@ -1145,7 +1145,7 @@ const skills = {
 			await event.targets[0].recover();
 		},
 	},
-	//天策上将-李世民------by 清风
+	//天策上将-李世民
 	pepozhen: {
 		audio: 2,
 		persevereSkill: true,
@@ -1160,7 +1160,7 @@ const skills = {
 			if (!target.getStorage("pepozhen_used").includes("选项一") && !player.getStorage("pepozhen_use").includes(target)) {
 				return true;
 			}
-			if (!target.getStorage("pepozhen_used").includes("选项二") && target.countGainableCards(player, "hej")) {
+			if (!target.getStorage("pepozhen_used").includes("选项二") && target.hasGainableCards(player, "hej")) {
 				return true;
 			}
 			if (!target.getStorage("pepozhen_used").includes("选项三")) {
@@ -1178,7 +1178,7 @@ const skills = {
 			} else {
 				choiceList[0] = `<span style="opacity:0.5">` + choiceList[0] + "</span>";
 			}
-			if (!target.getStorage("pepozhen_used").includes("选项二") && target.countGainableCards(player, "hej")) {
+			if (!target.getStorage("pepozhen_used").includes("选项二") && target.hasGainableCards(player, "hej")) {
 				list.push("选项二");
 			} else {
 				choiceList[1] = `<span style="opacity:0.5">` + choiceList[1] + "</span>";
@@ -1418,7 +1418,10 @@ const skills = {
 				},
 			},
 		},
-		subSkill: { backup: {} },
+		subSkill: { 
+			backup: {},
+			used: { charlotte: true, onremove: true },
+		},
 	},
 	pezhenguan: {
 		audio: 2,
@@ -2145,7 +2148,7 @@ const skills = {
 		},
 		ai: { threaten: 1.1 },
 	},
-	// 曹操＆袁绍 by 刘巴
+	// 曹操＆袁绍
 	yjguibei: {
 		trigger: {
 			global: "phaseBefore",

@@ -3,7 +3,7 @@ import html from "dedent";
 
 /** @type { importCharacterConfig["skill"] } */
 const skills = {
-	//张星彩------ by 清风
+	//张星彩
 	ymhengren: {
 		audio: 2,
 		zhuanhuanji: true,
@@ -516,7 +516,7 @@ const skills = {
 			},
 		},
 	},
-	//梦貂蝉------by 清风
+	//梦貂蝉
 	ymdiyu: {
 		audio: 2,
 		trigger: { global: "roundStart" },
@@ -753,17 +753,24 @@ const skills = {
 			},
 		},
 	},
-	//线下奶龙------by 清风
+	//线下奶龙
+	ymfriendzhugelianggongli: {
+		audio: "friendzhugelianggongli",
+		locked: true,
+		ai: { combo: "ymfriendyance" },
+	},
 	ymfriendyance: {
 		audio: ["friendyance1.mp3", "friendyance2.mp3", "friendyance3.mp3"],
 		logAudio: () => ["friendyance1.mp3"],
 		trigger: { global: "roundStart" },
 		async content(event, trigger, player) {
-			await player.draw({ num: 5 });
+			const bool = player.hasSkill("ymfriendzhugelianggongli") && get.info("friendgongli").isFriendOf(player, "friend_pangtong");
+			let num = 5 + bool;
+			await player.draw({ num });
 			if (!player.hasCards("h")) {
 				return;
 			}
-			const num = Math.min(5, player.countCards("h"));
+			num = Math.min(num, player.countCards("h"));
 			const result = await player
 				.chooseCard({
 					prompt: `演策：将${get.cnNumber(num)}张手牌置于武将牌上（先选择的在上）`,
@@ -787,6 +794,7 @@ const skills = {
 			}
 		},
 		subSkill: {
+			round: { charlotte: true },
 			yance: {
 				forced: true,
 				charlotte: true,
@@ -825,11 +833,16 @@ const skills = {
 					const cardx = player.getExpansions(event.name)[0],
 						card = trigger.card;
 					await player.loseToDiscardpile({ cards: [cardx] });
+					const bool = player.hasSkill("ymfriendzhugelianggongli") && get.info("friendgongli").isFriendOf(player, "friend_xushu") && !player.hasSkill("ymfriendyance_round");
+					player.addTempSkill("ymfriendyance_round", "roundStart");
 					let num = 0;
 					if (get.suit(card) == get.suit(cardx)) {
 						num++;
 					}
 					if (get.type2(card) == get.type2(cardx)) {
+						num++;
+					}
+					if (num < 2 && bool) {
 						num++;
 					}
 					if (player.storage[event.name]) {
@@ -848,7 +861,11 @@ const skills = {
 				mod: {
 					aiOrder(player, card, num) {
 						const cards = player.getExpansions("ymfriendyance_yance");
-						if (!cards.length) {
+						if (!cards.length || num <= 0) {
+							return;
+						}
+						const bool = player.hasSkill("ymfriendzhugelianggongli") && get.info("friendgongli").isFriendOf(player, "friend_xushu") && !player.hasSkill("ymfriendyance_round");
+						if (bool) {
 							return;
 						}
 						const cardx = cards[0];
