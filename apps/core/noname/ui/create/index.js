@@ -2625,7 +2625,8 @@ export class Create {
 		ui.system1 = ui.create.div("#system1", ui.system);
 		ui.system2 = ui.create.div("#system2", ui.system);
 
-		ui.replay = ui.create.system("重来", game.reload, true);
+		const reload = get.mode() === "doudizhu" && !_status.connectMode ? game.reloadDoudizhu : game.reload;
+		ui.replay = ui.create.system("重来", reload, true);
 		ui.replay.id = "restartbutton";
 		ui.config2 = ui.create.system("选项", ui.click.config);
 		ui.pause = ui.create.system("暂停", ui.click.pause);
@@ -3035,7 +3036,7 @@ export class Create {
 		ui.create.div(ui.shortcut, function (e) {
 			e.stopPropagation();
 		});
-		ui.create.div(".menubutton.round", "<span>重来</span>", ui.shortcut, game.reload).dataset.position = 1;
+		ui.create.div(".menubutton.round", "<span>重来</span>", ui.shortcut, reload).dataset.position = 1;
 		ui.create.div(".menubutton.round", "<span>退出</span>", ui.shortcut, game.exit).dataset.position = 3;
 		ui.create.div(".menubutton.round", "<span>记录</span>", ui.shortcut, ui.click.pause).dataset.position = 4;
 		ui.shortcut.autobutton = ui.create.div(".menubutton.round", "<span>托管</span>", ui.shortcut, ui.click.auto);
