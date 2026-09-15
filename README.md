@@ -1,6 +1,6 @@
 <h1 align="center">无名杀</h1>
 
-> 本仓库是由 Jiahui-Gu 维护的个人版本，基于 [libnoname/noname](https://github.com/libnoname/noname) 持续同步并保留个人维护改动。此版本的自更新跟随 [Jiahui-Gu/noname](https://github.com/Jiahui-Gu/noname) 的 `main` 分支。
+> 本仓库是由 Jiahui-Gu 维护的私人自用版本，基于 [libnoname/noname](https://github.com/libnoname/noname) 持续同步并保留个人维护改动。
 
 <p align="center">
   <a href="https://github.com/libnoname/noname/actions/workflows/build.yml"><img alt="构建状态" src="https://img.shields.io/github/actions/workflow/status/libnoname/noname/build.yml?branch=main&style=flat-square"></a>
