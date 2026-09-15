@@ -13,6 +13,7 @@ spawnSync("pnpm -F ./packages/extension/** build", {
 console.log("合并打包结果");
 await fs.rm("dist", { recursive: true, force: true });
 await fs.mkdir("dist", { recursive: true });
+await fs.mkdir("dist/updater", { recursive: true });
 await Promise.all([
 	fs.cp("apps/core/dist", "dist", { recursive: true }),
 	fs.cp("apps/core/audio", "dist/audio", { recursive: true }),
@@ -21,5 +22,6 @@ await Promise.all([
 	fs.cp("docs", "dist/docs", { recursive: true }),
 	fs.cp(".nomedia", "dist/.nomedia"),
 	fs.cp("LICENSE", "dist/LICENSE"),
-	fs.cp("README.md", "dist/README.md")
+	fs.cp("README.md", "dist/README.md"),
+	fs.cp("scripts/stageInstalledUpdate.ts", "dist/updater/stageInstalledUpdate.ts"),
 ]);

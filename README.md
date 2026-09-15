@@ -20,15 +20,9 @@
 
 ## 快速启动
 
-### 始终游玩最新 main
+### 安装版一键更新
 
-个人本地游玩无需维护独立更新包。在干净的 `main` 分支运行：
-
-```bash
-pnpm play:latest
-```
-
-先退出正在运行的安装版，再执行该命令。它会以 fast-forward 方式同步 `origin/main`、补齐依赖并构建最新游戏内容，然后更新本机原安装版并启动原来的 `noname.exe`。安装版的 `Home` 配置和已有扩展会保留。默认安装目录为 `%LOCALAPPDATA%\Programs\noname`，也可通过 `NONAME_INSTALL_DIR` 指定。
+安装版右下角的“一键更新”会在后台同步并构建本机 `main`，同时增量更新“活动武将”；当前游戏不会被中断，退出后自动应用。默认使用 `%USERPROFILE%\.copilot\repos\noname` 作为本地仓库。
 
 ### 环境要求
 
