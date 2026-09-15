@@ -10,8 +10,9 @@ const nextCommit = "89abcdef0123456789abcdef0123456789abcdef";
 const manifestUrl = "https://github.com/Jiahui-Gu/noname/releases/download/main-latest/main-update.json";
 const packageUrl = "https://github.com/Jiahui-Gu/noname/releases/download/main-latest/noname-main.zip";
 
-function setup(requiresInstaller = false, overrideManifestUrl = manifestUrl) {
+function setup(requiresInstaller = false, overrideManifestUrl = manifestUrl, redirectPackage = false) {
 	const bytes = new TextEncoder().encode("verified update");
+	const redirectedPackageUrl = "https://release-assets.githubusercontent.com/noname-main.zip";
 	const manifest = {
 		schemaVersion: 1,
 		commit: nextCommit,
@@ -46,7 +47,8 @@ function setup(requiresInstaller = false, overrideManifestUrl = manifestUrl) {
 			});
 		}
 		if (url === manifestUrl) return Response.json(manifest);
-		if (url === packageUrl) return new Response(bytes, { headers: { "content-length": String(bytes.byteLength) } });
+		if (url === packageUrl && redirectPackage) return new Response(null, { status: 302, headers: { location: redirectedPackageUrl } });
+		if (url === packageUrl || url === redirectedPackageUrl) return new Response(bytes, { headers: { "content-length": String(bytes.byteLength) } });
 		throw new Error(`Unexpected request: ${url}`);
 	};
 	const service = new MainUpdateService(store, {
@@ -81,6 +83,12 @@ test("downloads, verifies, stages, and activates a compatible update", async () 
 	assert.deepEqual(result, { state: "ready", commit: nextCommit });
 	assert.equal(value.staged(), 1);
 	assert.equal(value.activated(), 1);
+});
+
+test("accepts GitHub's release asset redirect host", async () => {
+	const value = setup(false, manifestUrl, true);
+	const result = await value.service.check(commit);
+	assert.deepEqual(result, { state: "ready", commit: nextCommit });
 });
 
 test("rejects a non-allowlisted asset host before download", async () => {

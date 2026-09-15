@@ -5,7 +5,7 @@ import path from "node:path";
 import { parseMainUpdateManifest } from "./manifest.ts";
 import { UpdateStore } from "./store.ts";
 
-const ALLOWED_HOSTS = new Set(["github.com", "api.github.com", "objects.githubusercontent.com"]);
+const ALLOWED_HOSTS = new Set(["github.com", "api.github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"]);
 const RELEASE_URL = "https://github.com/Jiahui-Gu/noname/releases";
 
 export type UpdateStatus =
