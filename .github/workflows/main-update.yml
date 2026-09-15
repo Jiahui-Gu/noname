@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
     group: main-update
-    cancel-in-progress: true
+    cancel-in-progress: false
 
 jobs:
     publish:
@@ -39,6 +39,46 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
+            - name: Resolve published baseline
+              id: baseline
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  update_before=""
+                  rm -rf release-baseline
+                  mkdir release-baseline
+
+                  if gh release view main-latest >/dev/null 2>&1; then
+                    if git fetch --force origin \
+                      refs/tags/main-latest:refs/tags/main-latest \
+                      >/dev/null 2>&1; then
+                      candidate="$(git rev-parse --verify \
+                        'refs/tags/main-latest^{commit}' 2>/dev/null || true)"
+                      assets="$(gh release view main-latest \
+                        --json assets \
+                        --jq '[.assets[].name] | sort | join(" ")' \
+                        2>/dev/null || true)"
+
+                      if [[ "$candidate" =~ ^[0-9a-f]{40}$ ]] &&
+                        [[ " $assets " == *" main-update.json "* ]] &&
+                        [[ " $assets " == *" noname-main.zip "* ]] &&
+                        gh release download main-latest \
+                          --pattern main-update.json \
+                          --dir release-baseline \
+                          --clobber >/dev/null 2>&1; then
+                        published_commit="$(jq -er \
+                          '.commit | select(type == "string")' \
+                          release-baseline/main-update.json 2>/dev/null || true)"
+                        if [[ "$published_commit" == "$candidate" ]]; then
+                          update_before="$candidate"
+                        fi
+                      fi
+                    fi
+                  fi
+
+                  echo "update_before=$update_before" >>"$GITHUB_OUTPUT"
+
             - name: Build main package
               env:
                   NONAME_BUILD_CHANNEL: nightly
@@ -55,33 +95,39 @@ jobs:
             - name: Create update manifest
               env:
                   UPDATE_COMMIT: ${{ github.sha }}
-                  UPDATE_BEFORE: ${{ github.event.before }}
+                  UPDATE_BEFORE: ${{ steps.baseline.outputs.update_before }}
                   UPDATE_PACKAGE: release/noname-main.zip
                   UPDATE_OUTPUT: release/main-update.json
               run: pnpm exec tsx scripts/create-main-update-manifest.ts
 
-            - name: Create or update prerelease
+            - name: Publish prerelease
               shell: bash
               env:
                   GH_TOKEN: ${{ github.token }}
               run: |
-                  git tag --force main-latest "$GITHUB_SHA"
-                  git push origin refs/tags/main-latest --force
-
                   if gh release view main-latest >/dev/null 2>&1; then
                     gh release edit main-latest \
                       --title "Main Latest" \
                       --prerelease \
                       --latest=false
+
+                    gh release upload main-latest \
+                      release/main-update.json \
+                      release/noname-main.zip \
+                      --clobber
+
+                    git tag --force main-latest "$GITHUB_SHA"
+                    git push origin refs/tags/main-latest --force
                   else
                     gh release create main-latest \
+                      --target "$GITHUB_SHA" \
                       --title "Main Latest" \
                       --notes "Rolling build from the main branch." \
                       --prerelease \
                       --latest=false
-                  fi
 
-                  gh release upload main-latest \
-                    release/main-update.json \
-                    release/noname-main.zip \
-                    --clobber
+                    gh release upload main-latest \
+                      release/main-update.json \
+                      release/noname-main.zip \
+                      --clobber
+                  fi
