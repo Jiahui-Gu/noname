@@ -49,6 +49,7 @@ function run(command: string, args: string[]) {
 		cwd: repoDir,
 		encoding: "utf8",
 		shell: false,
+		windowsHide: true,
 	});
 	if (result.error) throw result.error;
 	if (result.status !== 0) {
