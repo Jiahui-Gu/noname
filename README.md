@@ -28,7 +28,7 @@
 pnpm play:latest
 ```
 
-命令会先以 fast-forward 方式同步 `origin/main`、补齐依赖，再启动 Electron 开发版。运行期间由 Vite 处理普通游戏代码和资源的热刷新，无需退出 Electron；依赖或 Electron 主进程发生变化时，重新执行命令即可。
+先退出正在运行的安装版，再执行该命令。它会以 fast-forward 方式同步 `origin/main`、补齐依赖并构建最新游戏内容，然后更新本机原安装版并启动原来的 `noname.exe`。安装版的 `Home` 配置和已有扩展会保留。默认安装目录为 `%LOCALAPPDATA%\Programs\noname`，也可通过 `NONAME_INSTALL_DIR` 指定。
 
 ### 环境要求
 
