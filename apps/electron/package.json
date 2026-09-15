@@ -23,6 +23,7 @@
   "dependencies": {
     "@electron/get": "^4.0.2",
     "@electron/remote": "^2.1.3",
-    "@noname/fs": "workspace:*"
+    "@noname/fs": "workspace:*",
+    "extract-zip": "^2.0.1"
   }
 }

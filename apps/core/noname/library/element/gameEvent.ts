@@ -470,6 +470,7 @@ export class GameEvent implements PromiseLike<void> {
 			_status.gameDrawed = true;
 		}
 		if (name === "gameStart") {
+			window.nonameUpdate?.setGameActive(true);
 			lib.announce.publish("Noname.Game.Event.GameStart", {});
 			lib.announce.publish("gameStart", {});
 			if (_status.brawl && _status.brawl.gameStart) {

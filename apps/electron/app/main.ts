@@ -1,16 +1,14 @@
 /// <reference types="vite/client" />
-import { app, BrowserWindow, crashReporter, dialog, Menu, shell } from "electron";
+import { app, BrowserWindow, crashReporter, dialog, ipcMain, Menu, shell } from "electron";
 import fs from "fs";
 import path from "path";
 import remote from "@electron/remote/main/index.js";
 import createApp from "@noname/fs";
+import { UpdateRuntime } from "./update/runtime.ts";
+import { MainUpdateService, type UpdateStatus } from "./update/service.ts";
+import { UpdateStore } from "./update/store.ts";
 remote.initialize();
 const dirname = path.join(import.meta.dirname, "../");
-createApp({
-	port: 8089,
-	dirname,
-	server: true,
-});
 
 // 获取单实例锁
 const gotTheLock = app.requestSingleInstanceLock();
@@ -39,6 +37,14 @@ setPath("cache", path.join(dirname, "Home", "Cache"));
 setPath("crashDumps", path.join(dirname, "Home", "crashDumps"));
 //日志目录
 setPath("logs", path.join(dirname, "Home", "logs"));
+
+const updateStore = new UpdateStore(path.join(app.getPath("home"), "Updates"));
+fs.mkdirSync(updateStore.currentDir, { recursive: true });
+createApp({
+	port: 8089,
+	dirname: [updateStore.currentDir, dirname],
+	server: true,
+});
 
 //崩溃处理
 crashReporter.start({
@@ -70,8 +76,92 @@ process.env["ELECTRON_DEFAULT_ERROR_MODE"] = "true";
 process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
 process.noDeprecation = true;
 
+let updateCheckStarted = false;
+let waitForCurrentHealth = true;
+let installerNoticeCommit: string | undefined;
+let failureNotified = false;
+
+const broadcastStatus = (status: UpdateStatus) => {
+	for (const window of BrowserWindow.getAllWindows()) {
+		if (!window.isDestroyed()) window.webContents.send("noname-update:status", status);
+	}
+	if (status.state !== "downloading") console.info(`[main-update] ${status.state}`);
+	if (status.state === "installer-required" && installerNoticeCommit !== status.commit) {
+		installerNoticeCommit = status.commit;
+		const window = BrowserWindow.getAllWindows()[0];
+		const options: Electron.MessageBoxOptions = {
+				type: "info",
+				title: "需要更新安装包",
+				message: "此更新包含 Electron 或依赖变更，需要安装新版客户端。",
+				buttons: ["打开发行页", "稍后"],
+				defaultId: 0,
+				cancelId: 1,
+			};
+		void (window ? dialog.showMessageBox(window, options) : dialog.showMessageBox(options))
+			.then(({ response }) => {
+				if (response === 0) return shell.openExternal(status.releaseUrl);
+			})
+			.catch(error => console.error("[main-update] installer notification failed", error));
+	}
+	if (status.state === "failed" && !failureNotified) {
+		failureNotified = true;
+		const window = BrowserWindow.getAllWindows()[0];
+		const options: Electron.MessageBoxOptions = {
+				type: "error",
+				title: "游戏内容更新失败",
+				message: status.message,
+				detail: "客户端将继续使用当前可运行版本。",
+				buttons: ["确定"],
+			};
+		void (window ? dialog.showMessageBox(window, options) : dialog.showMessageBox(options))
+			.catch(error => console.error("[main-update] failure notification failed", error));
+	}
+};
+
+const runtime = new UpdateRuntime(
+	updateStore,
+	() => {
+		for (const window of BrowserWindow.getAllWindows()) {
+			if (!window.isDestroyed()) window.webContents.reload();
+		}
+	},
+	broadcastStatus
+);
+
+function readServedCommit(): string {
+	for (const root of [updateStore.currentDir, dirname]) {
+		try {
+			const value: unknown = JSON.parse(fs.readFileSync(path.join(root, "game", "build-info.json"), "utf8"));
+			if (typeof value === "object" && value !== null && typeof (value as { commit?: unknown }).commit === "string") {
+				return (value as { commit: string }).commit;
+			}
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== "ENOENT") console.warn("[main-update] unable to read build info", error);
+		}
+	}
+	return "unknown";
+}
+
+const updateService = new MainUpdateService(updateStore, {
+	owner: "Jiahui-Gu",
+	repo: "noname",
+	releaseTag: "main-latest",
+	maxPackageBytes: 1024 * 1024 * 1024,
+	timeoutMs: 30_000,
+	onStatus: status => runtime.setStatus(status),
+});
+
+function startUpdateCheckOnce() {
+	if (updateCheckStarted || import.meta.env.DEV) return;
+	updateCheckStarted = true;
+	void updateService.check(readServedCommit());
+}
+
 function createWindow() {
-	createMainWindow();
+	const window = createMainWindow();
+	window.webContents.once("did-finish-load", () => {
+		if (!waitForCurrentHealth) startUpdateCheckOnce();
+	});
 }
 
 function createMainWindow() {
@@ -167,11 +257,42 @@ function createMainWindow() {
 }
 
 app.whenReady().then(() => {
-	createWindow();
+	void updateStore
+		.initialize()
+		.then(async () => {
+			await runtime.startHealthCheck();
+			createWindow();
+		})
+		.catch(error => {
+			broadcastStatus({ state: "failed", message: `Update storage initialization failed: ${String(error)}` });
+			createWindow();
+		});
 	app.on("activate", () => {
 		if (BrowserWindow.getAllWindows().length === 0) {
 			createWindow();
 		}
+	});
+
+	function isKnownRenderer(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
+		return BrowserWindow.fromWebContents(event.sender) !== null;
+	}
+
+	ipcMain.on("noname-update:set-game-active", (event, active: unknown) => {
+		if (isKnownRenderer(event) && typeof active === "boolean") runtime.setGameActive(active);
+	});
+	ipcMain.on("noname-update:ready", event => {
+		if (!isKnownRenderer(event)) return;
+		void runtime
+			.reportReady()
+			.then(() => {
+				waitForCurrentHealth = false;
+				startUpdateCheckOnce();
+			})
+			.catch(error => runtime.setStatus({ state: "failed", message: `Update health confirmation failed: ${String(error)}` }));
+	});
+	ipcMain.handle("noname-update:get-status", event => {
+		if (!isKnownRenderer(event)) throw new Error("Unknown update IPC sender");
+		return runtime.getStatus();
 	});
 });
 
