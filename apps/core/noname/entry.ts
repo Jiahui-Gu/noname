@@ -2,7 +2,7 @@ import { lib, game, get, _status, ui, ai } from "noname";
 import { boot } from "@/init/index.js";
 import { userAgentLowerCase, device } from "@/util/index.js";
 import { loadBuildInfo } from "@/util/meta.js";
-import { installUpdateButton } from "@/update-button.js";
+import { startInstalledUpdate } from "@/installed-update.js";
 import "core-js-bundle";
 // 保证打包时存在(importmap)
 import "vue/dist/vue.esm-browser.js";
@@ -50,7 +50,7 @@ https://www.gnu.org/licenses/gpl-3.0.html
 		}
 
 		await boot();
-		installUpdateButton();
+		startInstalledUpdate();
 	} catch (e) {
 		console.error(e);
 		alert(`《无名杀》加载内容失败

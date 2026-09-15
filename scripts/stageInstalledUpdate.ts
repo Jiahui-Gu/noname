@@ -195,6 +195,20 @@ function isGameRunning() {
 	return run("tasklist.exe", ["/FI", "IMAGENAME eq noname.exe", "/NH"]).toLowerCase().includes("noname.exe");
 }
 
+async function renameWithRetry(source: string, target: string) {
+	const retryable = new Set(["EPERM", "EBUSY", "EACCES"]);
+	for (let attempt = 0; ; attempt++) {
+		try {
+			await fs.rename(source, target);
+			return;
+		} catch (error) {
+			const code = (error as NodeJS.ErrnoException).code;
+			if (!retryable.has(code || "") || attempt >= 59) throw error;
+			await new Promise(resolve => setTimeout(resolve, 1000));
+		}
+	}
+}
+
 async function applyWhenGameExits() {
 	await setStatus({ state: "running", message: "更新就绪，退出游戏后自动应用" });
 	while (isGameRunning()) {
@@ -203,15 +217,15 @@ async function applyWhenGameExits() {
 	if (!(await exists(nextDir))) return;
 
 	await fs.rm(previousDir, { recursive: true, force: true });
-	await fs.rename(appDir, previousDir);
+	await renameWithRetry(appDir, previousDir);
 	try {
 		const homeDir = path.join(previousDir, "Home");
-		if (await exists(homeDir)) await fs.rename(homeDir, path.join(nextDir, "Home"));
-		await fs.rename(nextDir, appDir);
+		if (await exists(homeDir)) await renameWithRetry(homeDir, path.join(nextDir, "Home"));
+		await renameWithRetry(nextDir, appDir);
 	} catch (error) {
 		const movedHome = path.join(nextDir, "Home");
-		if (await exists(movedHome)) await fs.rename(movedHome, path.join(previousDir, "Home"));
-		if (!(await exists(appDir))) await fs.rename(previousDir, appDir);
+		if (await exists(movedHome)) await renameWithRetry(movedHome, path.join(previousDir, "Home"));
+		if (!(await exists(appDir))) await renameWithRetry(previousDir, appDir);
 		throw error;
 	}
 }
