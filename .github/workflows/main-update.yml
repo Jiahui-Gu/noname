@@ -1,0 +1,87 @@
+name: Main Update
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+concurrency:
+    group: main-update
+    cancel-in-progress: true
+
+jobs:
+    publish:
+        name: Publish Main Update
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v5
+              with:
+                  version: 10
+                  run_install: false
+
+            - name: Install Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  cache: "pnpm"
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build main package
+              env:
+                  NONAME_BUILD_CHANNEL: nightly
+                  NONAME_BUILD_COMMIT: ${{ github.sha }}
+              run: pnpm build
+
+            - name: Archive main package
+              shell: bash
+              run: |
+                  mkdir -p release
+                  cd dist
+                  7z a ../release/noname-main.zip .
+
+            - name: Create update manifest
+              env:
+                  UPDATE_COMMIT: ${{ github.sha }}
+                  UPDATE_BEFORE: ${{ github.event.before }}
+                  UPDATE_PACKAGE: release/noname-main.zip
+                  UPDATE_OUTPUT: release/main-update.json
+              run: pnpm exec tsx scripts/create-main-update-manifest.ts
+
+            - name: Create or update prerelease
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  git tag --force main-latest "$GITHUB_SHA"
+                  git push origin refs/tags/main-latest --force
+
+                  if gh release view main-latest >/dev/null 2>&1; then
+                    gh release edit main-latest \
+                      --title "Main Latest" \
+                      --prerelease \
+                      --latest=false
+                  else
+                    gh release create main-latest \
+                      --title "Main Latest" \
+                      --notes "Rolling build from the main branch." \
+                      --prerelease \
+                      --latest=false
+                  fi
+
+                  gh release upload main-latest \
+                    release/main-update.json \
+                    release/noname-main.zip \
+                    --clobber

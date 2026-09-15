@@ -11,7 +11,8 @@
     "build:win": "tsx build.ts win",
     "build:linux": "tsx build.ts linux",
     "build:mac": "tsx build.ts macos",
-    "lint": "pnpm eslint app/**"
+    "lint": "pnpm eslint app/**",
+    "test": "tsx --test app/**/*.test.ts"
   },
   "devDependencies": {
     "electron": "^39.5.2",
