@@ -1,17 +1,5 @@
 //一些附加到window的对象的提示
 declare interface Window {
-    nonameUpdate?: {
-        setGameActive(active: boolean): void;
-        reportReady(): void;
-        getStatus(): Promise<
-            | { state: "checking" }
-            | { state: "up-to-date"; commit: string }
-            | { state: "downloading"; commit: string; received: number; total: number }
-            | { state: "ready"; commit: string }
-            | { state: "installer-required"; commit: string; releaseUrl: string }
-            | { state: "failed"; message: string; retryAt?: string }
-        >;
-    };
     /** 初始界面的暂时配置？ */
     tempSetNoname?: string;
     /** 游戏更新信息配置 */

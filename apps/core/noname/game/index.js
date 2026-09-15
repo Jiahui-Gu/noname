@@ -6686,7 +6686,6 @@ ${e instanceof Error ? e.stack : String(e)}`);
 					game.players[i].setIdentity();
 				}
 			}
-			window.nonameUpdate?.setGameActive(false);
 			return;
 		}
 		if (lib.config.background_audio) {
@@ -7288,7 +7287,6 @@ ${e instanceof Error ? e.stack : String(e)}`);
 		for (let i = 0; i < lib.onover.length; i++) {
 			lib.onover[i](resultbool);
 		}
-		window.nonameUpdate?.setGameActive(false);
 		if (game.addRecord) {
 			game.addRecord(resultbool);
 		}

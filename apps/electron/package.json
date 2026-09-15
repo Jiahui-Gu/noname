@@ -11,8 +11,7 @@
     "build:win": "tsx build.ts win",
     "build:linux": "tsx build.ts linux",
     "build:mac": "tsx build.ts macos",
-    "lint": "pnpm eslint app/**",
-    "test": "tsx --test app/**/*.test.ts"
+    "lint": "pnpm eslint app/**"
   },
   "devDependencies": {
     "electron": "^39.5.2",
@@ -23,7 +22,6 @@
   "dependencies": {
     "@electron/get": "^4.0.2",
     "@electron/remote": "^2.1.3",
-    "@noname/fs": "workspace:*",
-    "extract-zip": "^2.0.1"
+    "@noname/fs": "workspace:*"
   }
 }

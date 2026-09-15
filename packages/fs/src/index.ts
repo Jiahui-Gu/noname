@@ -28,15 +28,12 @@ export const defaultConfig = {
 	server: false,
 	port: 8089,
 	debug: false,
-	dirname: cwd() as string | string[],
+	dirname: cwd(),
 };
 
 function createFsHandler(dirname: string) {
 	const join = (url: string) => path.join(dirname, url);
-	const isInProject = (url: string) => {
-		const relative = path.relative(dirname, path.normalize(join(url)));
-		return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
-	};
+	const isInProject = (url: string) => path.normalize(join(url)).startsWith(dirname);
 
 	const ensureSafe = (url: string) => {
 		if (!isInProject(url)) throw new Error(`只能访问 ${dirname} 下的资源`);
@@ -58,15 +55,13 @@ function createFsHandler(dirname: string) {
 
 export default function createApp(config: Partial<typeof defaultConfig> = {}) {
 	const cfg = { ...defaultConfig, ...config };
-	const staticRoots = (Array.isArray(cfg.dirname) ? cfg.dirname : [cfg.dirname]).map(root => path.resolve(root));
-	const mutationRoot = staticRoots.at(-1)!;
-	cfg.dirname = staticRoots;
+	cfg.dirname = path.resolve(cfg.dirname);
 	if (cfg.debug) console.log(cfg);
 	const app = Fastify({
 		logger: cfg.debug,
 	});
 
-	const { ensureSafe, wrap } = createFsHandler(mutationRoot);
+	const { ensureSafe, wrap } = createFsHandler(cfg.dirname);
 
 	app.register(cors, {
 		origin: "*",
@@ -74,7 +69,7 @@ export default function createApp(config: Partial<typeof defaultConfig> = {}) {
 	});
 
 	app.register(fastifyStatic, {
-		root: staticRoots,
+		root: cfg.dirname,
 		prefix: "/",
 		dotfiles: "allow",
 		maxAge: 0,
