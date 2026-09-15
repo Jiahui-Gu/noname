@@ -49,8 +49,8 @@ https://www.gnu.org/licenses/gpl-3.0.html
 			}
 		}
 
-		await boot();
 		startInstalledUpdate();
+		await boot();
 	} catch (e) {
 		console.error(e);
 		alert(`《无名杀》加载内容失败
