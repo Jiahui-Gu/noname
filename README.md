@@ -20,6 +20,10 @@
 
 ## 快速启动
 
+### 安装版一键更新
+
+安装版右下角的“一键更新”会在后台同步并构建本机 `main`，同时增量更新“活动武将”；当前游戏不会被中断，退出后自动应用。默认使用 `%USERPROFILE%\.copilot\repos\noname` 作为本地仓库。
+
 ### 环境要求
 
 > **提示：** 请参考 [本地文档](./docs/how-to-start.md) 或 [github文档](https://github.com/libnoname/noname/wiki/%E5%A6%82%E4%BD%95%E8%BF%90%E8%A1%8C%E6%97%A0%E5%90%8D%E6%9D%80%EF%BC%88%E7%A8%8B%E5%BA%8F%E5%91%98%E7%89%88%EF%BC%89) 配置环境。
