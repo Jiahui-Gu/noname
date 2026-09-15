@@ -193,6 +193,27 @@ export default {
 		},
 	],
 	game: {
+		reloadDoudizhu() {
+			if (!_status.connectMode && game.me && game.zhu) {
+				const landlordDistance = get.distance(game.me, game.zhu, "absolute");
+				if (Number.isInteger(landlordDistance) && landlordDistance >= 0 && landlordDistance < game.players.length) {
+					game.saveConfig("doudizhu_rematch", landlordDistance);
+				}
+			}
+			game.reload();
+		},
+		consumeDoudizhuRematch() {
+			const landlordDistance = lib.config.doudizhu_rematch;
+			game.saveConfig("doudizhu_rematch");
+			if (!Number.isInteger(landlordDistance) || landlordDistance < 0 || landlordDistance >= game.players.length) {
+				return null;
+			}
+			const landlord = game.players.find(current => get.distance(game.me, current, "absolute") === landlordDistance);
+			if (landlord) {
+				game.zhu = landlord;
+			}
+			return landlord || null;
+		},
 		/**
 		 * 判断当前模式是否允许在菜单中切换角色。
 		 *
@@ -443,11 +464,13 @@ export default {
 					});
 				}
 				const dialog = ui.create.dialog("你的选将框与底牌", [characterMap[game.me.playerid], "character"], game.me.storage.doudizhu_cardPile);
-				const start = game.players.randomGet();
+				const start = _status.doudizhuRematchLandlord || game.players.randomGet();
 				let current = start;
 				let tempDizhu;
-				let biddingFinished = false;
-				await game.delay(7);
+				let biddingFinished = Boolean(_status.doudizhuRematchLandlord);
+				if (!_status.doudizhuRematchLandlord) {
+					await game.delay(7);
+				}
 				while (!biddingFinished) {
 					current.classList.add("glow_phase");
 					if (current === game.me) {
@@ -553,11 +576,13 @@ export default {
 				}
 				const controls = ["不叫地主", "一倍", "两倍", "三倍"];
 				const dialog = ui.create.dialog(`本局城池：${get.translation(game.zhuSkill)}`, [characterMap[game.me.playerid], "character"]);
-				const start = game.players.randomGet();
+				const start = _status.doudizhuRematchLandlord || game.players.randomGet();
 				let current = start;
 				let tempDizhu;
-				let biddingFinished = false;
-				await game.delay(8);
+				let biddingFinished = Boolean(_status.doudizhuRematchLandlord);
+				if (!_status.doudizhuRematchLandlord) {
+					await game.delay(8);
+				}
 				while (!biddingFinished) {
 					current.classList.add("glow_phase");
 					if (current === game.me) {
@@ -695,11 +720,13 @@ export default {
 					recommendedCharacters.removeArray(characterMap[id]);
 				}
 				const dialog = ui.create.dialog("你的选将框", [characterMap[game.me.playerid], "character"]);
-				const start = game.players.randomGet();
+				const start = _status.doudizhuRematchLandlord || game.players.randomGet();
 				let current = start;
-				let biddingFinished = false;
+				let biddingFinished = Boolean(_status.doudizhuRematchLandlord);
 				lib.init.onfree();
-				await game.delay(2.5);
+				if (!_status.doudizhuRematchLandlord) {
+					await game.delay(2.5);
+				}
 				while (!biddingFinished) {
 					const choiceEvent = current.chooseControl({
 						controls: [...controls],
@@ -763,7 +790,12 @@ export default {
 				game.saveConfig("continue_name");
 				const list = [];
 				const list4 = [];
-				identityList.randomSort();
+				if (_status.doudizhuRematchLandlord) {
+					identityList.remove("zhu");
+					identityList.splice(game.players.indexOf(_status.doudizhuRematchLandlord), 0, "zhu");
+				} else {
+					identityList.randomSort();
+				}
 				let index = 0;
 				for (const current of game.players) {
 					current.identity = identityList[index];
@@ -847,6 +879,7 @@ export default {
 		 * @returns { void }
 		 */
 		chooseCharacter() {
+			_status.doudizhuRematchLandlord = game.consumeDoudizhuRematch();
 			if (_status.mode === "kaihei") {
 				game.chooseCharacterKaihei();
 				return;
@@ -1078,7 +1111,12 @@ export default {
 					event.addSetting = addSetting;
 					event.removeSetting = removeSetting;
 					event.list = [];
-					identityList.randomSort();
+					if (_status.doudizhuRematchLandlord) {
+						identityList.remove("zhu");
+						identityList.splice(game.players.indexOf(_status.doudizhuRematchLandlord), 0, "zhu");
+					} else {
+						identityList.randomSort();
+					}
 					if (event.identity) {
 						identityList.remove(event.identity);
 						identityList.unshift(event.identity);
